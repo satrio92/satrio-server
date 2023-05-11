@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 app.post('/send-message', (req, res) => {
     let oyy = `nama : ${req.body.name} \nemail : ${req.body.email} \npesannya adalah : \n${req.body.message}`
     client.messages.create({
-        from: 'whatsapp:+14155238886',
+        from: 'whatsapp:+6287753889031',
         to: 'whatsapp:+6282335283181',
         body: oyy
     }).then(message => console.log(message.sid));
