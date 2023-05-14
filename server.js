@@ -15,8 +15,27 @@ mongoose.connect('mongodb+srv://kukuh_satrio:kukuhsatrio123@cluster0.jf4gbun.mon
 
 // Define schema for shortlink
 const shortlinkSchema = new mongoose.Schema({
-    fullUrl: String,
-    shortUrl: String,
+    fullUrl: {
+      type: String,
+      required: true
+    },
+    shortUrl: {
+      type: String,
+      unique: true,
+      default: shortid.generate()
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    },
+    clicks: {
+      type: Number,
+      default: 0
+    }
 });
 
 // Create model for shortlink
@@ -46,36 +65,44 @@ app.get('/', (req, res) => {
 // Endpoint for creating shortlinks
 app.post('/shortlinks', async (req, res) => {
     const fullUrl = req.body.fullUrl;
-    const shortUrl = shortid.generate();
-  
-    // Save shortlink to database
-    const shortlink = new Shortlink({
-      fullUrl: fullUrl,
-      shortUrl: shortUrl,
-    });
-    await shortlink.save();
-  
-    // Return shortlink to client
-    const response = {
-      fullUrl: fullUrl,
-      shortUrl: shortUrl,
-    };
-    res.send(response);
+    shortUrl = req.body.shortUrl;
+
+    try {
+      const shortlink = new Shortlink({
+        fullUrl: fullUrl,
+        shortUrl: shortUrl,
+      });
+      const savedLink = await shortlink.save();
+    
+      res.send(savedLink); 
+    } catch (err) {
+      res.status(400).send(err.message);
+    }
   });
   
+  app.get('/shortlinks', async (req, res) => {
+    try {
+      const shortlink = await Shortlink.find({});
+      // console.log(results);
+      res.send(shortlink)
+    } catch (err) {
+      throw err;
+    }
+    
+  })
+
   // Endpoint for redirecting shortlinks
   app.get('/:shortUrl', async (req, res) => {
-    const shortUrl = req.params.shortUrl;
+    let shortUrl = req.params.shortUrl;
   
-    // Find shortlink in database
-    const shortlink = await Shortlink.findOne({ shortUrl: shortUrl });
+    // Find and Update shortlink in database
+    const shortlink = await Shortlink.findOneAndUpdate({ "shortUrl": shortUrl }, { $inc: { clicks: 1 } });
   
     if (!shortlink) {
       return res.status(404).send('Shortlink not found');
     }
   
     // Redirect to full URL
-    // res.redirect(shortlink.fullUrl);
     res.send(shortlink.fullUrl);
   });
 
